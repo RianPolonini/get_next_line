@@ -6,7 +6,7 @@
 /*   By: rfaria-p <rfaria-p@student.42.rio>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/04 14:06:36 by rfaria-p          #+#    #+#             */
-/*   Updated: 2025/02/06 06:49:25 by rfaria-p         ###   ########.fr       */
+/*   Updated: 2025/02/06 08:02:47 by rfaria-p         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,11 +64,38 @@ char	*extract_line(char **stored_data)
 char	*get_next_line(int fd)
 {
 	static char	*stored_data;
+	char		*line;
 
 	if (fd < 0 || BUFFER_SIZE <= 0)
 		return (NULL);
 	stored_data = read_until_newline(fd, stored_data);
 	if (!stored_data)
 		return (NULL);
-	return (extract_line(&stored_data));
+	line = extract_line(&stored_data);
+	if (!stored_data)
+		free(stored_data);
+	return (line);
 }
+
+// #include <stdio.h>
+// int main(void)
+// {
+//     int fd = open("test.txt", O_RDONLY);
+//     if (fd == -1)
+//     {
+//         perror("Erro ao abrir o arquivo");
+//         return (1);
+//     }
+
+//     char *line;
+//     while ((line = get_next_line(fd)) != NULL)
+//     {
+//         printf("%s", line);
+//         free(line);
+//     }
+
+//     close(fd);
+//     return (0);
+// }
+// gcc -Wall -Wextra -Werror -D BUFFER_SIZE=42 get_next_line.c get_next_line_utils.c -o test_get_next_line
+// valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all ./test_get_next_line
