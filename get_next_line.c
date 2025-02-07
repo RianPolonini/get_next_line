@@ -6,38 +6,38 @@
 /*   By: rfaria-p <rfaria-p@student.42.rio>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/04 14:06:36 by rfaria-p          #+#    #+#             */
-/*   Updated: 2025/02/06 08:02:47 by rfaria-p         ###   ########.fr       */
+/*   Updated: 2025/02/07 09:41:39 by rfaria-p         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "get_next_line.h"
 
-char	*read_until_newline(int fd, char *stored_data)
+char	*fill_line(int fd, char *backup, char *buffer)
 {
-	char	*buffer;
-	char	*temp;
 	ssize_t	bytes;
+	char	*temp;
 
-	if (!stored_data)
-		stored_data = ft_strdup("");
-	buffer = malloc(BUFFER_SIZE + 1);
-	if (!buffer)
-		return (free(stored_data), NULL);
-	bytes = read(fd, buffer, BUFFER_SIZE);
+	bytes = 1;
 	while (bytes > 0)
 	{
-		buffer[bytes] = '\0';
-		temp = stored_data;
-		stored_data = ft_strjoin(stored_data, buffer);
-		free(temp);
-		if (ft_strchr(stored_data, '\n'))
-			break ;
+		if (!backup)
+			backup = ft_strdup("");
 		bytes = read(fd, buffer, BUFFER_SIZE);
+		if (bytes == -1)
+		{
+			free(buffer);
+			free(backup);
+			return (NULL);
+		}
+		buffer[bytes] = '\0';
+		temp = backup;
+		backup = ft_strjoin(backup, buffer);
+		free(temp);
+		if (ft_strchr(backup, '\n'))
+			break ;
 	}
 	free(buffer);
-	if (bytes == -1)
-		return (free(stored_data), NULL);
-	return (stored_data);
+	return (backup);
 }
 
 char	*extract_line(char **stored_data)
@@ -63,39 +63,46 @@ char	*extract_line(char **stored_data)
 
 char	*get_next_line(int fd)
 {
-	static char	*stored_data;
+	char		*buffer;
+	static char	*backup;
 	char		*line;
 
 	if (fd < 0 || BUFFER_SIZE <= 0)
 		return (NULL);
-	stored_data = read_until_newline(fd, stored_data);
-	if (!stored_data)
+	buffer = malloc(BUFFER_SIZE + 1);
+	if (!buffer)
 		return (NULL);
-	line = extract_line(&stored_data);
-	if (!stored_data)
-		free(stored_data);
+	backup = fill_line(fd, backup, buffer);
+	if (!backup)
+		return (NULL);
+	line = extract_line(&backup);
+	if (!line && backup)
+	{
+		free(backup);
+		backup = NULL;
+	}
 	return (line);
 }
 
-// #include <stdio.h>
-// int main(void)
-// {
-//     int fd = open("test.txt", O_RDONLY);
-//     if (fd == -1)
-//     {
-//         perror("Erro ao abrir o arquivo");
-//         return (1);
-//     }
+#include <stdio.h>
+int main(void)
+{
+    int fd = open("test.txt", O_RDONLY);
+    if (fd == -1)
+    {
+        perror("Erro ao abrir o arquivo");
+        return (1);
+    }
 
-//     char *line;
-//     while ((line = get_next_line(fd)) != NULL)
-//     {
-//         printf("%s", line);
-//         free(line);
-//     }
+    char *line;
+    while ((line = get_next_line(fd)) != NULL)
+    {
+        printf("%s", line);
+        free(line);
+    }
 
-//     close(fd);
-//     return (0);
-// }
+    close(fd);
+    return (0);
+}
 // gcc -Wall -Wextra -Werror -D BUFFER_SIZE=42 get_next_line.c get_next_line_utils.c -o test_get_next_line
 // valgrind --leak-check=full --track-origins=yes --show-leak-kinds=all ./test_get_next_line
